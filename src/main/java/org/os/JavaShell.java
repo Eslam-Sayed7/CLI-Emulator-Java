@@ -89,22 +89,12 @@ public class JavaShell {
     }
     private void mkdirCommand(String  name) {
         File newDir=new File(currentDirectory,name);
-        try {
-            if(newDir.createNewFile()){
-                System.out.println("Created A new File at path"+currentDirectory.getAbsolutePath());
+            if(newDir.mkdir()){
+                System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
             }
             else{
                 System.out.println("file already exists");
             }
-        }
-        catch (IOException e) {
-            System.out.println("Error while creating the file: " + e.getMessage());
-        } catch (SecurityException e) {
-            System.out.println("Permission denied: " + e.getMessage());
-        } catch (Exception e) {
-            System.out.println("An unexpected error occurred: " + e.getMessage());
-        }
-
     }
     // Handle Changing of directory
     private void changeDirectory(String path) {
