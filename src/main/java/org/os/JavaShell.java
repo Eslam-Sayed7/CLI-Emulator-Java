@@ -1,16 +1,21 @@
 package org.os;
-
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.lang.*;
 import java.util.List;
 import java.util.function.Supplier;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+
 
 public class JavaShell {
 
     private File currentDirectory;
 
-    public JavaShell() {
+    public JavaShell() throws IOException {
         // Set initial directory to the C: drive on Windows
         // String initialDir = "home/";
 
@@ -26,61 +31,6 @@ public class JavaShell {
         }
     }
 
-
-    public void runShell() {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
-        String command;
-
-        System.out.println("Welcome to JavaShell. Type 'exit' to quit.");
-
-        while (true) {
-            try {
-                // Prompt for input
-                System.out.print(currentDirectory+"> ");
-                command = reader.readLine();
-
-                // Exit condition
-                if (command.trim().equalsIgnoreCase("exit")) {
-                    System.out.println("Exiting JavaShell...");
-                    break;
-                }
-
-                // Execute the command
-                executeCommand(command);
-
-            } catch (IOException e) {
-                System.err.println("Error reading input: " + e.getMessage());
-            }
-        }
-    }
-
-
-    // Execute shell commands
-    private void executeCommand(String command) throws IOException {
-        String[] binarytokens = command.split("\\s+");
-
-        // Handle cd as a special command
-        if(binarytokens.length <= 2){
-            switch (binarytokens[0]) {
-                case "cd" -> CD(binarytokens[1]);
-                case "pwd" -> PWD();
-                case "ls" -> STDprintFunctionOutput(this::LS);
-                case "touch" ->touch(binarytokens[1]);
-                case "help" -> help();
-                case "mkdir"->mkdirCommand(binarytokens);
-            }
-
-        } else { // more than two token [ | - >> - > ] tools
-            String[] tokens = command.split("\\s+");
-            if(command.contains("|")){
-                Piping(tokens[0] , tokens[2]);
-            } else if (command.contains(">>")) {
-                RedirectingWithAppending(tokens[0] , tokens[2]);
-            } else if (command.contains(">")) {
-                RedirectingWithOverriding(tokens[0] , tokens[2]);
-            }
-        }
-    }
     private void CD(String tokens){
         if (tokens.length() < 2) {
             System.out.println("cd: missing argument");
@@ -88,11 +38,11 @@ public class JavaShell {
             changeDirectory(tokens);
         }
     }
-    private File PWD(){
-        return currentDirectory;
+    private String PWD(){
+        return currentDirectory.toString();
     }
     private File[] LS(){
-        File[]contents=currentDirectory.listFiles();
+        File[]contents = currentDirectory.listFiles();
         if(contents == null) {
             System.out.println("Directory is inaccessible");
 //            for (File content : contents) {
@@ -112,7 +62,6 @@ public class JavaShell {
         }
 
     }
-    // Handle Changing of directory
     private void changeDirectory(String path) {
         File newDir = new File(currentDirectory, path);
         if(path.equals("..")){
@@ -134,7 +83,22 @@ public class JavaShell {
             System.out.println("cd: no such directory: " + path);
         }
     }
+    public static <T> void STDprintFunctionOutput(Supplier<T> function) {
+        T result = function.get();  // Get the result
 
+        if (result instanceof File[]) {
+            File[] files = (File[]) result;
+            Arrays.stream(files)
+                    .map(File::getName)  // Get the name of each file
+                    .forEach(System.out::println);  // Print each file name
+        } else if (result instanceof String) {
+            System.out.println((String) result);
+        } else if (result instanceof File) {
+            printFileContent((File) result);
+        } else {
+            System.out.println(result);
+        }
+    }
     private void help(){
         String file="help.txt";
         System.out.println(file);
@@ -183,23 +147,6 @@ public class JavaShell {
         }
     }
 
-    public static <T> void STDprintFunctionOutput(Supplier<T> function) {
-        T result = function.get();  // Get the result
-
-        if (result instanceof File[]) {
-            File[] files = (File[]) result;
-            Arrays.stream(files)
-                    .map(File::getName)  // Get the name of each file
-                    .forEach(System.out::println);  // Print each file name
-        } else if (result instanceof String) {
-            System.out.println((String) result);
-        } else if (result instanceof File) {
-            printFileContent((File) result);
-        } else {
-            System.out.println(result);
-        }
-    }
-    //error here
     private void touch(String  name) {
         File newDir=new File(currentDirectory,name);
         if(newDir.mkdir()){
@@ -258,4 +205,56 @@ public class JavaShell {
         }
     }
 
+    public void runShell() {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+            String command;
+
+            System.out.println("Welcome to JavaShell. Type 'exit' to quit.");
+
+            while (true) {
+                try {
+                    // Prompt for input
+                    System.out.print(currentDirectory+"> ");
+                    command = reader.readLine();
+
+                    // Exit condition
+                    if (command.trim().equalsIgnoreCase("exit")) {
+                        System.out.println("Exiting JavaShell...");
+                        break;
+                    }
+
+                    // Execute the command
+                    executeCommand(command);
+
+                } catch (IOException e) {
+                    System.err.println("Error reading input: " + e.getMessage());
+                }
+            }
+        }
+    // Execute shell commands
+    private void executeCommand(String command) throws IOException {
+            String[] binarytokens = command.split("\\s+");
+
+            // Handle cd as a special command
+            if(binarytokens.length <= 2){
+                switch (binarytokens[0]) {
+                    case "cd" -> CD(binarytokens[1]);
+                    case "pwd" -> STDprintFunctionOutput(this::PWD);
+                    case "ls" -> STDprintFunctionOutput(this::LS);
+                    case "touch" ->touch(binarytokens[1]);
+                    case "help" -> help();
+                    case "mkdir"->mkdirCommand(binarytokens);
+                }
+
+            } else { // more than two token [ | - >> - > ] tools
+                String[] tokens = command.split("\\s+");
+                if(command.contains("|")){
+                    Piping(tokens[0] , tokens[2]);
+                } else if (command.contains(">>")) {
+                    RedirectingWithAppending(tokens[0] , tokens[2]);
+                } else if (command.contains(">")) {
+                    RedirectingWithOverriding(tokens[0] , tokens[2]);
+                }
+            }
+        }
 }
