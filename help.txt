@@ -1,0 +1,40 @@
+ _   _      _
+| | | | ___| |_ __
+| |_| |/ _ \ | '_ \
+|  _  |  __/ | |_) |
+|_| |_|\___|_| .__/
+             |_|
+
+cd [argument]  Changes place of the current directory to another one.
+
+pwd 		   Display current directory absoulte path.	
+
+ls 	    	   Lists the files and directories within the current directory.
+
+ls -a	 	   Shows all files including hidden files(those starting with .)
+
+ls -r	       Lists files and directories in in reverse order (reversing the default alphabetical sorting)
+               it applies to both the names of items within the specified directory,
+               and the order in which directories are displayed.
+
+mkdir [argument]   Command to make a new directory.
+
+touch [argument]   Command is used create an empty file or update the last modified timestamp of an existing file.
+
+rm [argument]	   Command is used for delete files and directories.
+
+rmdir [argument]   Command is used for delete empty directories.
+
+mv [argument]	   Command is used for moving or renaming files or directories.
+
+cat [argument]     Command is used for displaying the contents of the files, combining multiple files,
+		           or creating new ones.
+
+> [filename] 	   Symbol in the CLI is commonly used for output redirection (overwrite the file).
+
+>> [filename]      Symbol in the CLI is commonly used for output redirection in a way that appends
+		           the output of a command to a file instead of overwriting it.
+
+|		           Symbol in CLI is known as the pipe operator.
+                   It is used to pass the output of one command as input to another command
+                   where output of the first command becomes input of the second command.

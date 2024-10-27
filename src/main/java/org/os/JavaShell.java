@@ -1,9 +1,8 @@
 package org.os;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStreamReader;
+import java.io.*;
+import java.util.Objects;
+import java.util.stream.StreamSupport;
 
 public class JavaShell {
 
@@ -62,7 +61,8 @@ public class JavaShell {
             case "cd" -> CD(tokens[1]);
             case "pwd" -> PWD();
             case "ls" -> LS();
-            case "mkdir" ->mkdirCommand(tokens[1]);
+            case "help"->help();
+            case "mkdir" ->mkdirCommand(tokens);
         }
 
     }
@@ -87,14 +87,16 @@ public class JavaShell {
             System.out.println("Directory is inaccessible");
         }
     }
-    private void mkdirCommand(String  name) {
-        File newDir=new File(currentDirectory,name);
-            if(newDir.mkdir()){
-                System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
-            }
-            else{
+    private void mkdirCommand(String[]  name) {
+        for (int i=1 ;  i < name.length ; ++i) {
+            File newDir = new File(currentDirectory, name[i]);
+            if (newDir.mkdir()) {
+                System.out.println("Created A new Directory at path" + currentDirectory.getAbsolutePath());
+            } else {
                 System.out.println("file already exists");
             }
+        }
+
     }
     // Handle Changing of directory
     private void changeDirectory(String path) {
@@ -116,6 +118,19 @@ public class JavaShell {
             System.out.println("Directory changed to: " + currentDirectory.getAbsolutePath());
         } else {
             System.out.println("cd: no such directory: " + path);
+        }
+    }
+    private void help(){
+        String file="help.txt";
+        System.out.println(file);
+        try(BufferedReader br=new BufferedReader(new FileReader(file))){
+            String line;
+            while((line=br.readLine())!=null){
+                System.out.println(line);
+            }
+        }
+        catch (IOException e){
+            System.out.println("Error While reading the file");
         }
     }
 
