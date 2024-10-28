@@ -147,14 +147,20 @@ public class JavaShell {
         }
     }
 
-    private void touch(String  name) {
+    public void touch(String  name) {
         File newDir=new File(currentDirectory,name);
-        if(newDir.mkdir()){
-            System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+        try{
+            if(newDir.createNewFile()){
+                System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+            }
+            else{
+                System.out.println("file already exists");
+            }
         }
-        else{
-            System.out.println("file already exists");
+        catch (IOException e){
+            System.out.println("Error while Making the file");
         }
+
     }
     private void rm(String name) {
         File file = new File(currentDirectory, name);
