@@ -156,6 +156,33 @@ public class JavaShell {
             System.out.println("file already exists");
         }
     }
+    private void rm(String name) {
+        File file = new File(currentDirectory, name);
+        if (file.isFile() && file.delete()) {
+            System.out.println("Deleted file: " + file.getAbsolutePath());
+        } else {
+            System.out.println("File does not exist or failed to delete");
+        }
+    }
+
+    private void rmdir(String name) {
+        File dir = new File(currentDirectory, name);
+        if (dir.isDirectory() && dir.delete()) {
+            System.out.println("Deleted directory: " + dir.getAbsolutePath());
+        } else {
+            System.out.println("Directory does not exist, is not empty, or failed to delete");
+        }
+    }
+
+    private void mv(String sourceName, String targetName) {
+        File source = new File(currentDirectory, sourceName);
+        File target = new File(currentDirectory, targetName);
+        if (source.exists() && source.renameTo(target)) {
+            System.out.println("Moved/Renamed to: " + target.getAbsolutePath());
+        } else {
+            System.out.println("Failed to move/rename file or directory");
+        }
+    }
     private void RedirectingWithAppending( String cmd ,String filePath){
         ProcessBuilder processBuilder = new ProcessBuilder(cmd.split("\\s+"));
         processBuilder.redirectErrorStream(true); // Combine error and output streams
@@ -236,12 +263,15 @@ public class JavaShell {
             String[] binarytokens = command.split("\\s+");
 
             // Handle cd as a special command
-            if(binarytokens.length <= 2){
+            if(binarytokens.length <= 3){
                 switch (binarytokens[0]) {
                     case "cd" -> CD(binarytokens[1]);
                     case "pwd" -> STDprintFunctionOutput(this::PWD);
                     case "ls" -> STDprintFunctionOutput(this::LS);
                     case "touch" ->touch(binarytokens[1]);
+                    case "rm" -> rm(binarytokens[1]);
+                    case "rmdir" -> rmdir(binarytokens[1]);
+                    case "mv" -> mv(binarytokens[1], binarytokens[2]);
                     case "help" -> help();
                     case "mkdir"->mkdirCommand(binarytokens);
                 }
