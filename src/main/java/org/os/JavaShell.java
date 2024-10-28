@@ -142,11 +142,10 @@ public class JavaShell {
         InputStream inputStream = process.getInputStream();
 
         // Append the output to the specified file
-        try (FileOutputStream fileOutput = new FileOutputStream(filePath, true)) {
+        try (FileOutputStream fileOutput = new FileOutputStream(filePath, false)) {
             inputStream.transferTo(fileOutput);
         }
     }
-
     private void touch(String  name) {
         File newDir=new File(currentDirectory,name);
         if(newDir.mkdir()){
@@ -164,7 +163,6 @@ public class JavaShell {
             System.out.println("File does not exist or failed to delete");
         }
     }
-
     private void rmdir(String name) {
         File dir = new File(currentDirectory, name);
         if (dir.isDirectory() && dir.delete()) {
@@ -173,7 +171,6 @@ public class JavaShell {
             System.out.println("Directory does not exist, is not empty, or failed to delete");
         }
     }
-
     private void mv(String sourceName, String targetName) {
         File source = new File(currentDirectory, sourceName);
         File target = new File(currentDirectory, targetName);
@@ -231,7 +228,6 @@ public class JavaShell {
             System.out.println(line);
         }
     }
-
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
@@ -263,7 +259,7 @@ public class JavaShell {
             String[] binarytokens = command.split("\\s+");
 
             // Handle cd as a special command
-            if(binarytokens.length <= 3){
+            if(!command.contains("|") && !command.contains(">>") && !command.contains(">")){
                 switch (binarytokens[0]) {
                     case "cd" -> CD(binarytokens[1]);
                     case "pwd" -> STDprintFunctionOutput(this::PWD);
