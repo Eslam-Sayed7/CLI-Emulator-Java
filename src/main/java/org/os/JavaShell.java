@@ -134,7 +134,7 @@ public class JavaShell {
             throw new RuntimeException(e);
         }
     }
-    private static void RedirectingWithOverriding(String cmd, String filePath) throws IOException {
+    public static void RedirectingWithOverriding(String cmd, String filePath) throws IOException {
         // Start the process
         Process process = new ProcessBuilder(cmd.split("\\s+")).start();
 
@@ -180,7 +180,7 @@ public class JavaShell {
             System.out.println("Failed to move/rename file or directory");
         }
     }
-    private void RedirectingWithAppending( String cmd ,String filePath){
+    public void RedirectingWithAppending( String cmd ,String filePath){
         ProcessBuilder processBuilder = new ProcessBuilder(cmd.split("\\s+"));
         processBuilder.redirectErrorStream(true); // Combine error and output streams
 
@@ -204,7 +204,7 @@ public class JavaShell {
             e.printStackTrace();
         }
     }
-    private void Piping(String cmd1, String cmd2) throws IOException {
+    public void Piping(String cmd1, String cmd2) throws IOException {
         executeCommand(cmd1);
         Process p1 = new ProcessBuilder(cmd1.split("\\s+")).start();
 
