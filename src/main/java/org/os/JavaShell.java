@@ -237,6 +237,15 @@ public class JavaShell {
         }
     }
 
+    public void Cat(String fileName) {
+        File file = new File(currentDirectory, fileName);
+        if (file.exists() && file.isFile()) {
+            printFileContent(file);
+        } else {
+            System.out.println("cat: " + fileName + ": No such file");
+        }
+    }
+
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
@@ -279,6 +288,7 @@ public class JavaShell {
                     case "mv" -> mv(binarytokens[1], binarytokens[2]);
                     case "help" -> help();
                     case "mkdir"->mkdirCommand(binarytokens);
+                    case "cat" -> Cat(binarytokens[1]);
                 }
 
             } else { // more than two token [ | - >> - > ] tools
