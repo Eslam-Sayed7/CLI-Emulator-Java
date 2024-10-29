@@ -146,14 +146,21 @@ public class JavaShell {
             inputStream.transferTo(fileOutput);
         }
     }
-    private void touch(String  name) {
+
+    public void touch(String  name) {
         File newDir=new File(currentDirectory,name);
-        if(newDir.mkdir()){
-            System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+        try{
+            if(newDir.createNewFile()){
+                System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+            }
+            else{
+                System.out.println("file already exists");
+            }
         }
-        else{
-            System.out.println("file already exists");
+        catch (IOException e){
+            System.out.println("Error while Making the file");
         }
+
     }
     private void rm(String name) {
         File file = new File(currentDirectory, name);
@@ -171,6 +178,7 @@ public class JavaShell {
             System.out.println("Directory does not exist, is not empty, or failed to delete");
         }
     }
+
     private void mv(String sourceName, String targetName) {
         File source = new File(currentDirectory, sourceName);
         File target = new File(currentDirectory, targetName);
@@ -228,6 +236,7 @@ public class JavaShell {
             System.out.println(line);
         }
     }
+
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
