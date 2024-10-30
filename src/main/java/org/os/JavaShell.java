@@ -237,6 +237,40 @@ public class JavaShell {
         }
     }
 
+    public void Cat(String fileName) {
+        File file = new File(currentDirectory, fileName);
+        if (file.exists() && file.isFile()) {
+            printFileContent(file);
+        } else {
+            System.out.println("cat: " + fileName + ": No such file");
+        }
+    }
+
+    private File[] LS(boolean showAll, boolean reverseOrder) {
+        File[] contents = currentDirectory.listFiles();
+
+        if (contents == null) {
+            System.out.println("Directory is inaccessible");
+            return new File[0];
+        }
+
+        // Filter out hidden files if showAll is false
+        if (!showAll) {
+            contents = Arrays.stream(contents)
+                    .filter(file -> !file.isHidden())
+                    .toArray(File[]::new);
+        }
+
+        // Reverse order if reverseOrder is true
+        if (reverseOrder) {
+            Arrays.sort(contents, (f1, f2) -> f2.getName().compareTo(f1.getName()));
+        } else {
+            Arrays.sort(contents, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+        }
+
+        return contents;
+    }
+
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
@@ -279,7 +313,11 @@ public class JavaShell {
                     case "mv" -> mv(binarytokens[1], binarytokens[2]);
                     case "help" -> help();
                     case "mkdir"->mkdirCommand(binarytokens);
+                    case "cat" -> Cat(binarytokens[1]);
+                    case "ls-a" -> STDprintFunctionOutput(() -> LS(true, false));
+                    case "ls-r" -> STDprintFunctionOutput(() -> LS(false, true));
                 }
+
 
             } else { // more than two token [ | - >> - > ] tools
                 String[] tokens = command.split("\\s+");
