@@ -31,17 +31,18 @@ public class JavaShell {
         }
     }
 
-    private void CD(String tokens){
+    public File CD(String tokens){
         if (tokens.length() < 2) {
             System.out.println("cd: missing argument");
         } else {
-            changeDirectory(tokens);
+            return changeDirectory(tokens);
         }
+        return currentDirectory;
     }
-    private String PWD(){
+    public String PWD(){
         return currentDirectory.toString();
     }
-    private File[] LS(){
+    public File[] LS(){
         File[]contents = currentDirectory.listFiles();
         if(contents == null) {
             System.out.println("Directory is inaccessible");
@@ -51,7 +52,7 @@ public class JavaShell {
         }
         return contents;
     }
-    private void mkdirCommand(String[]  name) {
+    public void mkdirCommand(String[]  name) {
         for (int i=1 ;  i < name.length ; ++i) {
             File newDir = new File(currentDirectory, name[i]);
             if (newDir.mkdir()) {
@@ -62,19 +63,19 @@ public class JavaShell {
         }
 
     }
-    private void changeDirectory(String path) {
-        File newDir = new File(currentDirectory, path);
-        if(path.equals("..")){
+    public File changeDirectory(String path) {
+        System.out.println(path);
+        File newDir = path.equals("..") ? currentDirectory.getParentFile() :
+                (new File(path).isAbsolute() ? new File(path) : new File(currentDirectory, path));        if(path.equals("..")){
             String parentPath = currentDirectory.getParent(); // Get the parent directory path
 
             if (parentPath != null) {
                 currentDirectory = new File(parentPath);
                 System.out.println("Directory changed to: " + currentDirectory.getAbsolutePath());
-
             } else {
                 System.out.println("Already at the root directory.");
             }
-            return;
+            return currentDirectory;
         }
         if (newDir.exists() && newDir.isDirectory()) {
             currentDirectory = newDir;
@@ -82,6 +83,7 @@ public class JavaShell {
         } else {
             System.out.println("cd: no such directory: " + path);
         }
+        return currentDirectory;
     }
     public static <T> void STDprintFunctionOutput(Supplier<T> function) {
         T result = function.get();  // Get the result
@@ -134,7 +136,7 @@ public class JavaShell {
             throw new RuntimeException(e);
         }
     }
-    private static void RedirectingWithOverriding(String cmd, String filePath) throws IOException {
+    public static void RedirectingWithOverriding(String cmd, String filePath) throws IOException {
         // Start the process
         Process process = new ProcessBuilder(cmd.split("\\s+")).start();
 
@@ -142,19 +144,25 @@ public class JavaShell {
         InputStream inputStream = process.getInputStream();
 
         // Append the output to the specified file
-        try (FileOutputStream fileOutput = new FileOutputStream(filePath, true)) {
+        try (FileOutputStream fileOutput = new FileOutputStream(filePath, false)) {
             inputStream.transferTo(fileOutput);
         }
     }
 
-    private void touch(String  name) {
+    public void touch(String  name) {
         File newDir=new File(currentDirectory,name);
-        if(newDir.mkdir()){
-            System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+        try{
+            if(newDir.createNewFile()){
+                System.out.println("Created A new Directory at path"+currentDirectory.getAbsolutePath());
+            }
+            else{
+                System.out.println("file already exists");
+            }
         }
-        else{
-            System.out.println("file already exists");
+        catch (IOException e){
+            System.out.println("Error while Making the file");
         }
+
     }
     private void rm(String name) {
         File file = new File(currentDirectory, name);
@@ -164,7 +172,6 @@ public class JavaShell {
             System.out.println("File does not exist or failed to delete");
         }
     }
-
     private void rmdir(String name) {
         File dir = new File(currentDirectory, name);
         if (dir.isDirectory() && dir.delete()) {
@@ -183,7 +190,7 @@ public class JavaShell {
             System.out.println("Failed to move/rename file or directory");
         }
     }
-    private void RedirectingWithAppending( String cmd ,String filePath){
+    public void RedirectingWithAppending( String cmd ,String filePath){
         ProcessBuilder processBuilder = new ProcessBuilder(cmd.split("\\s+"));
         processBuilder.redirectErrorStream(true); // Combine error and output streams
 
@@ -207,7 +214,7 @@ public class JavaShell {
             e.printStackTrace();
         }
     }
-    private void Piping(String cmd1, String cmd2) throws IOException {
+    public void Piping(String cmd1, String cmd2) throws IOException {
         executeCommand(cmd1);
         Process p1 = new ProcessBuilder(cmd1.split("\\s+")).start();
 
@@ -230,6 +237,40 @@ public class JavaShell {
         while ((line = reader.readLine()) != null) {
             System.out.println(line);
         }
+    }
+
+    public void Cat(String fileName) {
+        File file = new File(currentDirectory, fileName);
+        if (file.exists() && file.isFile()) {
+            printFileContent(file);
+        } else {
+            System.out.println("cat: " + fileName + ": No such file");
+        }
+    }
+
+    private File[] LS(boolean showAll, boolean reverseOrder) {
+        File[] contents = currentDirectory.listFiles();
+
+        if (contents == null) {
+            System.out.println("Directory is inaccessible");
+            return new File[0];
+        }
+
+        // Filter out hidden files if showAll is false
+        if (!showAll) {
+            contents = Arrays.stream(contents)
+                    .filter(file -> !file.isHidden())
+                    .toArray(File[]::new);
+        }
+
+        // Reverse order if reverseOrder is true
+        if (reverseOrder) {
+            Arrays.sort(contents, (f1, f2) -> f2.getName().compareTo(f1.getName()));
+        } else {
+            Arrays.sort(contents, (f1, f2) -> f1.getName().compareTo(f2.getName()));
+        }
+
+        return contents;
     }
 
     public void runShell() {
@@ -261,9 +302,9 @@ public class JavaShell {
     // Execute shell commands
     private void executeCommand(String command) throws IOException {
             String[] binarytokens = command.split("\\s+");
-
+            System.out.println(Arrays.toString(binarytokens));
             // Handle cd as a special command
-            if(binarytokens.length <= 3){
+            if(!command.contains("|") && !command.contains(">>") && !command.contains(">")){
                 switch (binarytokens[0]) {
                     case "cd" -> CD(binarytokens[1]);
                     case "pwd" -> STDprintFunctionOutput(this::PWD);
@@ -274,7 +315,11 @@ public class JavaShell {
                     case "mv" -> mv(binarytokens[1], binarytokens[2]);
                     case "help" -> help();
                     case "mkdir"->mkdirCommand(binarytokens);
+                    case "cat" -> Cat(binarytokens[1]);
+                    case "ls-a" -> STDprintFunctionOutput(() -> LS(true, false));
+                    case "ls-r" -> STDprintFunctionOutput(() -> LS(false, true));
                 }
+
 
             } else { // more than two token [ | - >> - > ] tools
                 String[] tokens = command.split("\\s+");
