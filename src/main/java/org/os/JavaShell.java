@@ -31,17 +31,18 @@ public class JavaShell {
         }
     }
 
-    private void CD(String tokens){
+    public File CD(String tokens){
         if (tokens.length() < 2) {
             System.out.println("cd: missing argument");
         } else {
-            changeDirectory(tokens);
+            return changeDirectory(tokens);
         }
+        return currentDirectory;
     }
-    private String PWD(){
+    public String PWD(){
         return currentDirectory.toString();
     }
-    private File[] LS(){
+    public File[] LS(){
         File[]contents = currentDirectory.listFiles();
         if(contents == null) {
             System.out.println("Directory is inaccessible");
@@ -51,7 +52,7 @@ public class JavaShell {
         }
         return contents;
     }
-    private void mkdirCommand(String[]  name) {
+    public void mkdirCommand(String[]  name) {
         for (int i=1 ;  i < name.length ; ++i) {
             File newDir = new File(currentDirectory, name[i]);
             if (newDir.mkdir()) {
@@ -62,19 +63,19 @@ public class JavaShell {
         }
 
     }
-    private void changeDirectory(String path) {
-        File newDir = new File(currentDirectory, path);
-        if(path.equals("..")){
+    public File changeDirectory(String path) {
+        System.out.println(path);
+        File newDir = path.equals("..") ? currentDirectory.getParentFile() :
+                (new File(path).isAbsolute() ? new File(path) : new File(currentDirectory, path));        if(path.equals("..")){
             String parentPath = currentDirectory.getParent(); // Get the parent directory path
 
             if (parentPath != null) {
                 currentDirectory = new File(parentPath);
                 System.out.println("Directory changed to: " + currentDirectory.getAbsolutePath());
-
             } else {
                 System.out.println("Already at the root directory.");
             }
-            return;
+            return currentDirectory;
         }
         if (newDir.exists() && newDir.isDirectory()) {
             currentDirectory = newDir;
@@ -82,6 +83,7 @@ public class JavaShell {
         } else {
             System.out.println("cd: no such directory: " + path);
         }
+        return currentDirectory;
     }
     public static <T> void STDprintFunctionOutput(Supplier<T> function) {
         T result = function.get();  // Get the result
@@ -266,7 +268,7 @@ public class JavaShell {
     // Execute shell commands
     private void executeCommand(String command) throws IOException {
             String[] binarytokens = command.split("\\s+");
-
+            System.out.println(Arrays.toString(binarytokens));
             // Handle cd as a special command
             if(!command.contains("|") && !command.contains(">>") && !command.contains(">")){
                 switch (binarytokens[0]) {
