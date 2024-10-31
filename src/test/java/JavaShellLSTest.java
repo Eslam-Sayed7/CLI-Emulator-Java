@@ -63,7 +63,7 @@ public class JavaShellLSTest {
     @Test
     void testLSWithoutShowAllAndRegularOrder() {
         // Run 'ls' (showAll = false, reverseOrder = false)
-        shell.STDprintFunctionOutput(() -> shell.LS(false, false));
+        shell.STDprintFunctionOutput(() -> shell.LS(false, 0));
 
         // Capture actual output and verify expected files are present in regular order
         List<String> actualOutput = outputStream.toString().lines().collect(Collectors.toList());
@@ -78,7 +78,7 @@ public class JavaShellLSTest {
     @Test
     void testLSWithShowAll() {
         // Run 'ls -a' (showAll = true, reverseOrder = false)
-        shell.STDprintFunctionOutput(() -> shell.LS(true, false));
+        shell.STDprintFunctionOutput(() -> shell.LS(true, 0));
 
         // Capture actual output and verify expected files are present in order
         List<String> actualOutput = outputStream.toString().lines().collect(Collectors.toList());
@@ -91,7 +91,7 @@ public class JavaShellLSTest {
     @Test
     void testLSWithReverseOrder() {
         // Run 'ls -r' (showAll = false, reverseOrder = true)
-        shell.STDprintFunctionOutput(() -> shell.LS(false, true));
+        shell.STDprintFunctionOutput(() -> shell.LS(false, 1));
 
         // Capture actual output and verify expected files are present in reverse order
         List<String> actualOutput = outputStream.toString().lines().collect(Collectors.toList());
@@ -105,7 +105,7 @@ public class JavaShellLSTest {
     @Test
     void testLSWithShowAllAndReverseOrder() {
         // Run 'ls -a -r' (showAll = true, reverseOrder = true)
-        shell.STDprintFunctionOutput(() -> shell.LS(true, true));
+        shell.STDprintFunctionOutput(() -> shell.LS(true, 1));
 
         // Capture actual output and verify expected files are present in reverse order
         List<String> actualOutput = outputStream.toString().lines().collect(Collectors.toList());
