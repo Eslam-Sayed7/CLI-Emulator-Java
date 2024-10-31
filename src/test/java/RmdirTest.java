@@ -30,11 +30,7 @@ public class RmdirTest {
     void testRmdir() throws IOException {
         JavaShell shell = new JavaShell();
         assertTrue(Files.exists(testDirPath));
-
-        // Execute command
         shell.rmdir(TEST_DIR);
-
-        // verify
         assertFalse(Files.exists(testDirPath));
     }
 }

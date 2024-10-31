@@ -39,8 +39,9 @@ public class MvTest {
         assertFalse(Files.exists(newFilePath));
 
         // Execute the command
+        shell.CD(TEST_DIR);
         shell.mv(TEST_FILE, NEW_FILE);
-
+        shell.CD("..");
         // verify it was renamed
         assertFalse(Files.exists(testFilePath));
         assertTrue(Files.exists(newFilePath));

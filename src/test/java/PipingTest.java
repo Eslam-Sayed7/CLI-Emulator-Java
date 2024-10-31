@@ -1,47 +1,53 @@
-import org.junit.jupiter.api.AfterEach;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Test;
-import org.os.Example;
-import org.os.JavaShell;
+    import org.junit.jupiter.api.AfterEach;
+    import org.junit.jupiter.api.BeforeEach;
+    import org.junit.jupiter.api.Test;
+    import org.os.JavaShell;
+    import java.io.IOException;
+    import java.nio.file.Files;
+    import java.nio.file.Path;
+    import java.nio.file.Paths;
+    import java.util.Arrays;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
-import static org.junit.jupiter.api.Assertions.*;
+    import static org.junit.jupiter.api.Assertions.*;
 
 
-public class PipingTest {
-    String TEST_FILE = "testing_pip_output.txt";
+    public class PipingTest {
 
-            @BeforeEach
-            void setUp() throws IOException {
-                // Create an empty test file
-                Files.createFile(Paths.get(TEST_FILE));
+        String[] TEST_FILES = {"1.txt" , "2.txt" , "AB.txt" , "AC.txt","a.txt" , "b.txt"};
+        String TEST_DIR  = "testing_pip_output";
+        private Path testFilePath;
+        int NumberoftestFiles = 6;
+        JavaShell shell;
+
+
+        @BeforeEach
+        void setUp() throws IOException {
+            Files.createDirectory(Paths.get(TEST_DIR));
+            for(int i = 0; i< NumberoftestFiles; i++){
+                testFilePath = Paths.get(TEST_DIR, TEST_FILES[i]);
+                Files.createFile(testFilePath);
             }
+        }
 
-            @AfterEach
-            void tearDown() throws IOException {
-                // Clean up the test file after the test completes
-                Files.deleteIfExists(Paths.get(TEST_FILE));
+        @AfterEach
+        void tearDown() throws IOException {
+            for(int i = 0; i< NumberoftestFiles; i++){
+                testFilePath = Paths.get(TEST_DIR, TEST_FILES[i]);
+                Files.deleteIfExists(testFilePath);
             }
+            Files.deleteIfExists(Paths.get(TEST_DIR));
+        }
 
-            @Test
-            void makeFileEmptyAndListToITAndCheckFileNotEmpty() throws IOException {
-                // Command to write content to the test file
-                // command : cat source.txt > destination.txt
+        @Test
+        void PipCurrentFilesAndReloadAndCheckIfSortedAsc() throws IOException, InterruptedException {
+            // Command: ls | sort   would sort them in ascending order
+            String cmd = "ls | sort";
+            shell = new JavaShell();
+            shell.CD(TEST_DIR);
+            String output = shell.handlePiping(cmd);
+            String[] sortedFiles = output.split("\n");
+            Arrays.sort(TEST_FILES);
+            assertArrayEquals(TEST_FILES, sortedFiles);
+        }
 
-                String cmd1 = "cat";
-                // Command to read from the test file (simulates piping logic)
-                String cmd2 = ">>" + TEST_FILE;
-
-                // Call the piping function
-                JavaShell shell = new JavaShell();
-                shell.handlePiping(cmd1, cmd2);
-                // Verify the file is not empty after processing
-                Path path = Paths.get(TEST_FILE);
-                assertTrue(Files.size(path) > 0, "File should not be empty after piping");
-            }
     }
