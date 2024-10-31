@@ -9,6 +9,7 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.util.stream.Collectors;
 
 
 public class JavaShell {
@@ -41,6 +42,16 @@ public class JavaShell {
     }
     public String PWD(){
         return currentDirectory.toString();
+    }
+    public File[] LS(){
+        File[]contents = currentDirectory.listFiles();
+        if(contents == null) {
+            System.out.println("Directory is inaccessible");
+//            for (File content : contents) {
+//                System.out.println(content.getName());
+//            }
+        }
+        return contents;
     }
     public void mkdirCommand(String[]  name) {
         for (int i=1 ;  i < name.length ; ++i) {
@@ -138,7 +149,6 @@ public class JavaShell {
             inputStream.transferTo(fileOutput);
         }
     }
-
     public void touch(String  name) {
         File newDir=new File(currentDirectory,name);
         try{
@@ -204,31 +214,56 @@ public class JavaShell {
             e.printStackTrace();
         }
     }
-    public void Piping(String cmd1, String cmd2) throws IOException {
-        executeCommand(cmd1);
-        Process p1 = new ProcessBuilder(cmd1.split("\\s+")).start();
+//    public void Piping(String cmd1, String cmd2) throws IOException {
+//        executeCommand(cmd1);
+//        Process p1 = new ProcessBuilder(cmd1.split("\\s+")).start();
+//
+//        // Capture the output of the first process
+//        InputStream inputStream = p1.getInputStream();
+//
+//        // Start the second process with input from the first process
+//        Process p2 = new ProcessBuilder(cmd2.split("\\s+")).start();
+//        OutputStream outputStream = p2.getOutputStream();
+//
+//        // Pipe the output of p1 to p2
+//        inputStream.transferTo(outputStream);
+//
+//        // Close the output stream to indicate end of input
+//        outputStream.close();
+//
+//        // Print the final output of the second process
+//        BufferedReader reader = new BufferedReader(new InputStreamReader(p2.getInputStream()));
+//        String line;
+//        while ((line = reader.readLine()) != null) {
+//            System.out.println(line);
+//        }
+//    }
+private void executePipedCommands(List<String[]> commands, int index, InputStream previousOutput)
+        throws IOException, InterruptedException {
+    if (index >= commands.size()) return; // Base case: no more commands to execute
 
-        // Capture the output of the first process
-        InputStream inputStream = p1.getInputStream();
+    String[] currentCommand = commands.get(index);
+    ProcessBuilder processBuilder = new ProcessBuilder(currentCommand);
 
-        // Start the second process with input from the first process
-        Process p2 = new ProcessBuilder(cmd2.split("\\s+")).start();
-        OutputStream outputStream = p2.getOutputStream();
+//    processBuilder.directory(new File(currentDirectory));
+    Process process = processBuilder.start();
 
-        // Pipe the output of p1 to p2
-        inputStream.transferTo(outputStream);
-
-        // Close the output stream to indicate end of input
-        outputStream.close();
-
-        // Print the final output of the second process
-        BufferedReader reader = new BufferedReader(new InputStreamReader(p2.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line);
+    if (previousOutput != null) {
+        try (OutputStream processInput = process.getOutputStream()) {
+            previousOutput.transferTo(processInput);
         }
     }
 
+    InputStream processOutput = process.getInputStream();
+
+    if (index == commands.size() - 1) {
+        processOutput.transferTo(System.out);
+//        return;
+    } else {
+        executePipedCommands(commands, index + 1, processOutput);
+    }
+    process.waitFor();
+}
     public void Cat(String fileName) {
         File file = new File(currentDirectory, fileName);
         if (file.exists() && file.isFile()) {
@@ -237,8 +272,7 @@ public class JavaShell {
             System.out.println("cat: " + fileName + ": No such file");
         }
     }
-
-    public File[] LS(boolean showAll, boolean reverseOrder) {
+    private File[] LS(boolean showAll, boolean reverseOrder) {
         File[] contents = currentDirectory.listFiles();
 
         if (contents == null) {
@@ -262,7 +296,6 @@ public class JavaShell {
 
         return contents;
     }
-
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
@@ -271,55 +304,68 @@ public class JavaShell {
 
             while (true) {
                 try {
-                    // Prompt for input
                     System.out.print(currentDirectory+"> ");
                     command = reader.readLine();
 
-                    // Exit condition
                     if (command.trim().equalsIgnoreCase("exit")) {
                         System.out.println("Exiting JavaShell...");
                         break;
                     }
-
-                    // Execute the command
                     executeCommand(command);
 
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     System.err.println("Error reading input: " + e.getMessage());
                 }
             }
         }
-    // Execute shell commands
-    private void executeCommand(String command) throws IOException {
-            String[] binarytokens = command.split("\\s+");
-            System.out.println(Arrays.toString(binarytokens));
-            // Handle cd as a special command
-            if(!command.contains("|") && !command.contains(">>") && !command.contains(">")){
-                switch (binarytokens[0]) {
-                    case "cd" -> CD(binarytokens[1]);
-                    case "pwd" -> STDprintFunctionOutput(this::PWD);
-                    case "ls" -> STDprintFunctionOutput(() -> LS(false, false));
-                    case "touch" ->touch(binarytokens[1]);
-                    case "rm" -> rm(binarytokens[1]);
-                    case "rmdir" -> rmdir(binarytokens[1]);
-                    case "mv" -> mv(binarytokens[1], binarytokens[2]);
-                    case "help" -> help();
-                    case "mkdir"->mkdirCommand(binarytokens);
-                    case "cat" -> Cat(binarytokens[1]);
-                    case "ls-a" -> STDprintFunctionOutput(() -> LS(true, false));
-                    case "ls-r" -> STDprintFunctionOutput(() -> LS(false, true));
-                }
+    public void executeCommand(String command) throws IOException, InterruptedException {
+        List<String[]> commands = new ArrayList<>();
+        String[] splitCommands = command.split("\\s+");
 
-
-            } else { // more than two token [ | - >> - > ] tools
-                String[] tokens = command.split("\\s+");
-                if(command.contains("|")){
-                    Piping(tokens[0] , tokens[2]);
-                } else if (command.contains(">>")) {
-                    RedirectingWithAppending(tokens[0] , tokens[2]);
-                } else if (command.contains(">")) {
-                    RedirectingWithOverriding(tokens[0] , tokens[2]);
-                }
+        if (!command.contains("|") && !command.contains(">>") && !command.contains(">")) {
+            handleSingleCommand(splitCommands);
+        } else {
+            String[] tokens = command.split("\\s+");
+            if (command.contains("|")) {
+                handlePiping(tokens);
+            } else if (command.contains(">>")) {
+                RedirectingWithAppending(tokens[0], tokens[2]);
+            } else if (command.contains(">")) {
+                RedirectingWithOverriding(tokens[0], tokens[2]);
             }
         }
+    }
+
+    public void handleSingleCommand(String[] binarytokens) throws IOException {
+        switch (binarytokens[0]) {
+            case "cd" -> CD(binarytokens[1]);
+            case "pwd" -> STDprintFunctionOutput(this::PWD);
+            case "ls" -> STDprintFunctionOutput(this::LS);
+            case "touch" -> touch(binarytokens[1]);
+            case "rm" -> rm(binarytokens[1]);
+            case "rmdir" -> rmdir(binarytokens[1]);
+            case "mv" -> mv(binarytokens[1], binarytokens[2]);
+            case "help" -> help();
+            case "mkdir" -> mkdirCommand(binarytokens);
+            case "cat" -> Cat(binarytokens[1]);
+            case "ls-a" -> STDprintFunctionOutput(() -> LS(true, false));
+            case "ls-r" -> STDprintFunctionOutput(() -> LS(false, true));
+            default -> System.out.println("Unknown command: " + binarytokens[0]);
+        }
+    }
+
+    public void handlePiping(String[] tokens) throws IOException, InterruptedException {
+        List<String> commandsList = new ArrayList<>(Arrays.asList(tokens));
+        List<String[]> commands = new ArrayList<>();
+
+        // Split the commands on the pipe '|' operator
+        String[] splitCommands = commandsList.stream().collect(Collectors.joining(" ")).split("\\|");
+
+        for (String cmd : splitCommands) {
+            commands.add(cmd.trim().split("\\s+"));
+        }
+        // Recursively execute each command
+        executePipedCommands(commands, 0, null);
+    }
+
 }
