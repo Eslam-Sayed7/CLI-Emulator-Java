@@ -42,16 +42,6 @@ public class JavaShell {
     public String PWD(){
         return currentDirectory.toString();
     }
-    public File[] LS(){
-        File[]contents = currentDirectory.listFiles();
-        if(contents == null) {
-            System.out.println("Directory is inaccessible");
-//            for (File content : contents) {
-//                System.out.println(content.getName());
-//            }
-        }
-        return contents;
-    }
     public void mkdirCommand(String[]  name) {
         for (int i=1 ;  i < name.length ; ++i) {
             File newDir = new File(currentDirectory, name[i]);
@@ -248,7 +238,7 @@ public class JavaShell {
         }
     }
 
-    private File[] LS(boolean showAll, boolean reverseOrder) {
+    public File[] LS(boolean showAll, boolean reverseOrder) {
         File[] contents = currentDirectory.listFiles();
 
         if (contents == null) {
@@ -308,7 +298,7 @@ public class JavaShell {
                 switch (binarytokens[0]) {
                     case "cd" -> CD(binarytokens[1]);
                     case "pwd" -> STDprintFunctionOutput(this::PWD);
-                    case "ls" -> STDprintFunctionOutput(this::LS);
+                    case "ls" -> STDprintFunctionOutput(() -> LS(false, false));
                     case "touch" ->touch(binarytokens[1]);
                     case "rm" -> rm(binarytokens[1]);
                     case "rmdir" -> rmdir(binarytokens[1]);
