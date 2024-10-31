@@ -1,5 +1,4 @@
 package org.os;
-import javax.print.DocFlavor;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -10,8 +9,6 @@ import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
-import java.util.stream.Collectors;
-
 
 public class JavaShell {
 
@@ -355,10 +352,6 @@ public class JavaShell {
         // Return the captured output as a String
         return outputStream.toString().trim();
     }
-
-
-
-
     public void executePipedCommands(List<String[]> commands, int index, InputStream input, File currentDirectory) throws IOException, InterruptedException {
         if (index >= commands.size()) {
             return;
