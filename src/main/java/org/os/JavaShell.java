@@ -164,7 +164,7 @@ public class JavaShell {
         }
 
     }
-    private void rm(String name) {
+    public void rm(String name) {
         File file = new File(currentDirectory, name);
         if (file.isFile() && file.delete()) {
             System.out.println("Deleted file: " + file.getAbsolutePath());
@@ -172,7 +172,7 @@ public class JavaShell {
             System.out.println("File does not exist or failed to delete");
         }
     }
-    private void rmdir(String name) {
+    public void rmdir(String name) {
         File dir = new File(currentDirectory, name);
         if (dir.isDirectory() && dir.delete()) {
             System.out.println("Deleted directory: " + dir.getAbsolutePath());
@@ -181,7 +181,7 @@ public class JavaShell {
         }
     }
 
-    private void mv(String sourceName, String targetName) {
+    public void mv(String sourceName, String targetName) {
         File source = new File(currentDirectory, sourceName);
         File target = new File(currentDirectory, targetName);
         if (source.exists() && source.renameTo(target)) {
