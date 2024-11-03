@@ -75,7 +75,6 @@ public class JavaShell {
             }
             return currentDirectory;
         }
-        System.out.println(path);
         File check=new File("C:/",path);
         if (newDir.exists() && newDir.isDirectory()) {
             currentDirectory = newDir;
