@@ -63,7 +63,6 @@ public class JavaShell {
 
     }
     public File changeDirectory(String path) {
-        System.out.println(path);
         File newDir = path.equals("..") ? currentDirectory.getParentFile() :
                 (new File(path).isAbsolute() ? new File(path) : new File(currentDirectory, path));        if(path.equals("..")){
             String parentPath = currentDirectory.getParent(); // Get the parent directory path
@@ -76,10 +75,16 @@ public class JavaShell {
             }
             return currentDirectory;
         }
+        File check=new File("C:/",path);
         if (newDir.exists() && newDir.isDirectory()) {
             currentDirectory = newDir;
             System.out.println("Directory changed to: " + currentDirectory.getAbsolutePath());
-        } else {
+        }
+        else if(check.exists()&&check.isDirectory()){
+            currentDirectory = check;
+            System.out.println("Directory changed to: " + currentDirectory.getAbsolutePath());
+        }
+        else {
             System.out.println("cd: no such directory: " + path);
         }
         return currentDirectory;
