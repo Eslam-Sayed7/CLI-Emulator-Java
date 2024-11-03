@@ -10,7 +10,6 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
-
 public class JavaShell {
 
     private File currentDirectory;
@@ -97,6 +96,10 @@ public class JavaShell {
             System.out.println((String) result);
         } else if (result instanceof File) {
             printFileContent((File) result);
+        } else if (result instanceof List<?>) {
+            List<?> list = (List<?>) result;
+            // Print each element in the list using its toString() method
+            list.forEach(item -> System.out.println(item.toString())); // Print each item in the list
         } else {
             System.out.println(result);
         }
@@ -148,7 +151,6 @@ public class JavaShell {
             inputStream.transferTo(fileOutput);
         }
     }
-
     public void touch(String  name) {
         File newDir=new File(currentDirectory,name);
         try{
@@ -164,7 +166,7 @@ public class JavaShell {
         }
 
     }
-    private void rm(String name) {
+    public void rm(String name) {
         File file = new File(currentDirectory, name);
         if (file.isFile() && file.delete()) {
             System.out.println("Deleted file: " + file.getAbsolutePath());
@@ -172,7 +174,7 @@ public class JavaShell {
             System.out.println("File does not exist or failed to delete");
         }
     }
-    private void rmdir(String name) {
+    public void rmdir(String name) {
         File dir = new File(currentDirectory, name);
         if (dir.isDirectory() && dir.delete()) {
             System.out.println("Deleted directory: " + dir.getAbsolutePath());
@@ -180,8 +182,15 @@ public class JavaShell {
             System.out.println("Directory does not exist, is not empty, or failed to delete");
         }
     }
-
-    private void mv(String sourceName, String targetName) {
+    public void Cat(String fileName) {
+        File file = new File(currentDirectory, fileName);
+        if (file.exists() && file.isFile()) {
+            printFileContent(file);
+        } else {
+            System.out.println("cat: " + fileName + ": No such file");
+        }
+    }
+    public void mv(String sourceName, String targetName) {
         File source = new File(currentDirectory, sourceName);
         File target = new File(currentDirectory, targetName);
         if (source.exists() && source.renameTo(target)) {
@@ -214,41 +223,7 @@ public class JavaShell {
             e.printStackTrace();
         }
     }
-    public void Piping(String cmd1, String cmd2) throws IOException {
-        executeCommand(cmd1);
-        Process p1 = new ProcessBuilder(cmd1.split("\\s+")).start();
-
-        // Capture the output of the first process
-        InputStream inputStream = p1.getInputStream();
-
-        // Start the second process with input from the first process
-        Process p2 = new ProcessBuilder(cmd2.split("\\s+")).start();
-        OutputStream outputStream = p2.getOutputStream();
-
-        // Pipe the output of p1 to p2
-        inputStream.transferTo(outputStream);
-
-        // Close the output stream to indicate end of input
-        outputStream.close();
-
-        // Print the final output of the second process
-        BufferedReader reader = new BufferedReader(new InputStreamReader(p2.getInputStream()));
-        String line;
-        while ((line = reader.readLine()) != null) {
-            System.out.println(line);
-        }
-    }
-
-    public void Cat(String fileName) {
-        File file = new File(currentDirectory, fileName);
-        if (file.exists() && file.isFile()) {
-            printFileContent(file);
-        } else {
-            System.out.println("cat: " + fileName + ": No such file");
-        }
-    }
-
-    private File[] LS(boolean showAll, boolean reverseOrder) {
+    public File[] LS(boolean showAll, int ordering) {
         File[] contents = currentDirectory.listFiles();
 
         if (contents == null) {
@@ -263,16 +238,15 @@ public class JavaShell {
                     .toArray(File[]::new);
         }
 
-        // Reverse order if reverseOrder is true
-        if (reverseOrder) {
+        // Reverse order if == 1 , ASC = 2  , normal = 0
+        if (ordering == 1) {
             Arrays.sort(contents, (f1, f2) -> f2.getName().compareTo(f1.getName()));
-        } else {
+        } else if(ordering == 2) {
             Arrays.sort(contents, (f1, f2) -> f1.getName().compareTo(f2.getName()));
         }
 
         return contents;
     }
-
     public void runShell() {
             BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
             String command;
@@ -281,55 +255,160 @@ public class JavaShell {
 
             while (true) {
                 try {
-                    // Prompt for input
                     System.out.print(currentDirectory+"> ");
                     command = reader.readLine();
 
-                    // Exit condition
                     if (command.trim().equalsIgnoreCase("exit")) {
                         System.out.println("Exiting JavaShell...");
                         break;
                     }
-
-                    // Execute the command
                     executeCommand(command);
 
-                } catch (IOException e) {
+                } catch (IOException | InterruptedException e) {
                     System.err.println("Error reading input: " + e.getMessage());
                 }
             }
         }
-    // Execute shell commands
-    private void executeCommand(String command) throws IOException {
-            String[] binarytokens = command.split("\\s+");
-            System.out.println(Arrays.toString(binarytokens));
-            // Handle cd as a special command
-            if(!command.contains("|") && !command.contains(">>") && !command.contains(">")){
-                switch (binarytokens[0]) {
-                    case "cd" -> CD(binarytokens[1]);
-                    case "pwd" -> STDprintFunctionOutput(this::PWD);
-                    case "ls" -> STDprintFunctionOutput(this::LS);
-                    case "touch" ->touch(binarytokens[1]);
-                    case "rm" -> rm(binarytokens[1]);
-                    case "rmdir" -> rmdir(binarytokens[1]);
-                    case "mv" -> mv(binarytokens[1], binarytokens[2]);
-                    case "help" -> help();
-                    case "mkdir"->mkdirCommand(binarytokens);
-                    case "cat" -> Cat(binarytokens[1]);
-                    case "ls-a" -> STDprintFunctionOutput(() -> LS(true, false));
-                    case "ls-r" -> STDprintFunctionOutput(() -> LS(false, true));
-                }
+    public void executeCommand(String command) throws IOException, InterruptedException {
+        List<String[]> commands = new ArrayList<>();
+        String[] splitCommands = command.split("\\s+");
 
-
-            } else { // more than two token [ | - >> - > ] tools
-                String[] tokens = command.split("\\s+");
-                if(command.contains("|")){
-                    Piping(tokens[0] , tokens[2]);
-                } else if (command.contains(">>")) {
-                    RedirectingWithAppending(tokens[0] , tokens[2]);
-                } else if (command.contains(">")) {
-                    RedirectingWithOverriding(tokens[0] , tokens[2]);
-                }
+        if (!command.contains("|") && !command.contains(">>") && !command.contains(">")) {
+            handleSingleCommand(splitCommands);
+        } else {
+            String[] tokens = command.split("\\s+");
+            if (command.contains("|")) {
+                handlePiping(command);
+            } else if (command.contains(">>")) {
+                RedirectingWithAppending(tokens[0], tokens[2]);
+            } else if (command.contains(">")) {
+                RedirectingWithOverriding(tokens[0], tokens[2]);
             }
         }
+    }
+    public void handleSingleCommand(String[] binarytokens) throws IOException {
+        switch (binarytokens[0]) {
+            case "cd" -> CD(binarytokens[1]);
+            case "pwd" -> STDprintFunctionOutput(this::PWD);
+            case "ls" -> STDprintFunctionOutput(() -> LS(false, 0));
+            case "touch" -> touch(binarytokens[1]);
+            case "rm" -> rm(binarytokens[1]);
+            case "rmdir" -> rmdir(binarytokens[1]);
+            case "mv" -> mv(binarytokens[1], binarytokens[2]);
+            case "help" -> help();
+            case "mkdir" -> mkdirCommand(binarytokens);
+            case "cat" -> Cat(binarytokens[1]);
+            case "ls-a" -> STDprintFunctionOutput(() -> LS(true, 0));
+            case "ls-r" -> STDprintFunctionOutput(() -> LS(false, 1));
+            default -> System.out.println("Unknown command: " + binarytokens[0]);
+        }
+    }
+    // Main method to handle piping
+    public String handlePiping(String command) throws IOException, InterruptedException {
+        // Setup a ByteArrayOutputStream to capture the output
+        ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
+        PrintStream originalOut = System.out; // Save the original System.out
+
+        // Create a PrintStream that writes to both System.out and outputStream
+        PrintStream dualStream = new PrintStream(new OutputStream() {
+            @Override
+            public void write(int b) throws IOException {
+                // Write to both System.out and outputStream
+                originalOut.write(b);
+                outputStream.write(b);
+            }
+
+            @Override
+            public void flush() throws IOException {
+                originalOut.flush();
+                outputStream.flush();
+            }
+
+            @Override
+            public void close() throws IOException {
+                originalOut.close();
+                outputStream.close();
+            }
+        });
+
+        // Redirect System.out to the dual stream
+        System.setOut(dualStream);
+        System.out.flush();  // Flush to ensure immediate output
+
+        try {
+            List<String[]> commands = new ArrayList<>();
+            String[] splitCommands = command.split("\\|+");
+
+            for (String cmd : splitCommands) {
+                commands.add(cmd.trim().split("\\s+"));
+            }
+            // Execute piped commands
+            executePipedCommands(commands, 0, null, currentDirectory);
+        } finally {
+            // Restore the original System.out
+            System.setOut(originalOut);
+        }
+
+        // Return the captured output as a String
+        return outputStream.toString().trim();
+    }
+    public void executePipedCommands(List<String[]> commands, int index, InputStream input, File currentDirectory) throws IOException, InterruptedException {
+        if (index >= commands.size()) {
+            return;
+        }
+
+        String[] command = commands.get(index);
+        ProcessBuilder processBuilder = new ProcessBuilder(command);
+
+        // Set the working directory for the process
+        processBuilder.directory(currentDirectory);
+
+        if (input != null) {
+            processBuilder.redirectInput(ProcessBuilder.Redirect.PIPE);
+        }
+
+        Process process = processBuilder.start();
+
+        if (input != null) {
+            try (OutputStream os = process.getOutputStream();
+                 BufferedReader reader = new BufferedReader(new InputStreamReader(input))) {
+                String line;
+                while ((line = reader.readLine()) != null) {
+                    os.write((line + "\n").getBytes());
+                }
+                os.flush();
+            }
+        }
+
+        if (command[0].equals("ls")) {
+            File[] files = LS(false, 0);
+            try (OutputStream os = process.getOutputStream()) {
+                PrintWriter writer = new PrintWriter(os);
+                for (File file : files) {
+                    writer.println(file.getName()); // Write file names to the output stream
+                }
+                executePipedCommands(commands, index + 1, process.getInputStream(), currentDirectory);
+            }
+
+        } else if (command[0].equals("sort")) {
+            BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
+            List<String> output = new ArrayList<>();
+            String line;
+
+            while ((line = reader.readLine()) != null) {
+                output.add(line);
+            }
+
+            output.sort(String::compareTo);
+            STDprintFunctionOutput(() -> output);
+
+        } else {
+            throw new IOException(command[0].toString() + " Not provided method");
+        }
+
+        // Wait for the current process to finish
+        process.waitFor();
+        process.getOutputStream().close();
+    }
+
 }
